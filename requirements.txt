@@ -16,7 +16,6 @@ googleapis-common-protos==1.60.0
 httplib2==0.22.0
 idna==3.4
 multidict==6.0.4
-multielo==0.4.1
 numpy==1.24.4
 oauthlib==3.2.2
 pandas==2.0.3
