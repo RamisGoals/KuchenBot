@@ -209,7 +209,7 @@ async def cardembedgen(name):
         Limit={"L1":3, "L2":3, "L3":3, "L4":3, "L5":3}
         order=("L1", "L2", "L3", "L4", "L5")
         count=0
-        for filename in os.listdir("./banlists"):
+        for filename in os.listdir("./banlists").sort():
             if "conf" in filename:
                 with open(f"banlists/{filename}", "r",encoding="utf-8") as g:
                     r=g.read()
