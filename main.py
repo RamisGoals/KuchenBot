@@ -211,7 +211,7 @@ async def cardembedgen(name):
         count=0
         thedir=[]
         for filename in os.listdir("./banlists"):
-            thedir.append(filename)
+            thedir=thedir.append(filename)
         thedir=thedir.sort()
         for filename in thedir:
             if "conf" in filename:
