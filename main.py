@@ -260,7 +260,7 @@ async def cardembedgen(name):
                 Type=f"{emoji[Types[0]]} Normal {Types[0]}"
             else:
                 Type=f"{emoji[Types[0]]} {Types[1]} {Types[0]} {emoji[Types[1]]}"
-            emb=discord.Embed(title=card, description=f"{fucking}", color=int(colours[Types[0].lower()],base=16))
+            emb=discord.Embed(title=card, description=f"{fucking}\n{Type}", color=int(colours[Types[0].lower()],base=16))
             emb.add_field(name="Card Text", value=text)
         else:
             #print(races[int(Data[8])])
