@@ -2,85 +2,58 @@ import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 import urllib.request
-import time
 import json
 import difflib
 import sqlite3
 import os
 import re
 
-LastCheck=0
-layers=[
-    "frosting",
-    "0",
-    "l1",
-    "layer 1",
-    "layer 1 (vanilla)",
-    "vanilla",
-    "1",
-    "l2",
-    "layer 2",
-    "layer 2 (chocolate)",
-    "chocolate",
-    "2",
-    "l3",
-    "layer 3",
-    "layer 3 (cheesecake)",
-    "cheesecake",
-    "3",
-    "l4",
-    "layer 4",
-    "layer 4 (lemon)",
-    "lemon",
-    "4"
-]
-
 emoji={
-    "Earth":"<:Earth:1169843781579833464>",
-    "Wind":"<:Wind:1169843998081421322>",
-    "Water":"<:Water:1169843948508958730>",
-    "Fire":"<:Fire:1169843838148419706>",
-    "Light":"<:Light:1169843900001828945>",
-    "Dark":"<:Dark:1169843593201066095>",
-    "Divine":"<:Divine:1169843709848846356>",
-    "Spell":"<:Spell:1169845291768352829>",
-    "Trap":"<:Trap:1169845378342989867>",
-    "Continuous":"<:Continuous:1169844987366756402>",
-    "Counter":"<:Counter:1169845433049301074>",
-    "Equip":"<:Equip:1169845058665730049>",
-    "Field":"<:Field:1169845178140471306>",
-    "Quick-Play":"<:QuickPlay:1169845111262281821>",
-    "Level":"<:Level:1169849330644041768>",
-    "Rank":"<:Rank:1169849378966609940>",
-    "Aqua":"<:Aqua:1169847545527287818>",
-    "Beast":"<:Beast:1169847486840574002>",
-    "Beast-Warrior":"<:BeastWarrior:1169847419391975454>",
-    "Creator God":"<:CreatorGod:1169847327800950814>",
-    "Cyberse":"<:Cyberse:1169847270359973948>",
-    "Dinosaur":"<:Dinosaur:1169847193134436352>",
-    "Divine-Beast":"<:DivineBeast:1169847076289515630>",
-    "Dragon":"<:Dragon:1169847007049941053>",
-    "Fairy":"<:Fairy:1169846944366076035>",
-    "Fiend":"<:Fiend:1169846891752722463>",
-    "Fish":"<:Fish:1169846816485941388>",
-    "Insect":"<:Insect:1169846728300695692>",
-    "Machine":"<:Machine:1169846660264906822>",
-    "Plant":"<:Plant:1169846581596540999>",
-    "Psychic":"<:Psychic:1169846513845932172>",
-    "Pyro":"<:Pyro:1169846419453132800>",
-    "Reptile":"<:Reptile:1169846349538271333>",
-    "Rock":"<:Rock:1169846290532802630>",
-    "Sea Serpent":"<:SeaSerpent:1169846225810497626>",
-    "Spellcaster":"<:Spellcaster:1169846161625067550>",
-    "Thunder":"<:Thunder:1169846076791066736>",
-    "Warrior":"<:Warrior:1169845908972781648>",
-    "Winged Beast":"<:WingedBeast:1169845730547081278>",
-    "Wyrm":"<:Wyrm:1169845646887497728>",
-    "Zombie":"<:Zombie:1169845518973816863>",
-    "Illusion":"<:Illusion:1171269929530556457>",#temp
-    "Left Scale":"<:LeftScale:1171261697202327623>",
-    "Right Scale":"<:RightScale:1171261773228294164>",
-    "Ritual":"<:Ritual:1169845232855171133>"
+    "Earth":"<:AttributeEARTH:1557737634577776691>",
+    "Wind":"<:AttributeWIND:1557737774533054586>",
+    "Water":"<:AttributeWATER:1557737752974327939>",
+    "Fire":"<:AttributeFIRE:1557737653363937322>",
+    "Light":"<:AttributeLIGHT:1557737672368201849>",
+    "Dark":"<:AttributeDARK:1557737581305667614>",
+    "Divine":"<:AttributeDIVINE:1557737617271951360>",
+    "Spell":"<:AttributeSPELL:1557737697399934999>",
+    "Trap":"<:AttributeTRAP:1557737717352243261>",
+    "Continuous":"<:TypeContinuous:1557737962429485177>",
+    "Counter":"<:TypeCounter:1557738003080945694>",
+    "Equip":"<:TypeEquip:1557738036652146719>",
+    "Ritual":"<:TypeRitual:1557738158161006633>",
+    "Field":"<:TypeField:1557738071385047071>",
+    "Quick-Play":"<:TypeQuickPlay:1557738106638172170>",
+    "Level":"<:Level:1557743264507891835>",
+    "Rank":"<:Rank:1557743285693583422>",
+    "Left Scale":"<:PendulumScaleL:1557743326252376144>",
+    "Right Scale":"<:PendulumScaleR:1557743354140434553>",
+    "Aqua":"<:TypeAqua:1557739582227751044>",
+    "Beast":"<:TypeBeast:1557739622899908681>",
+    "Beast-Warrior":"<:TypeBeastWarrior:1557739680907272202>",
+    "Creator God":"<:TypeCreatorGod:1557739737933029486>",
+    "Cyberse":"<:TypeCyberse:1557739814412095548>",
+    "Dinosaur":"<:TypeDinosaur:1557739892929204275>",
+    "Divine-Beast":"<:TypeDivineBeast:1557739980133109791>",
+    "Dragon":"<:TypeDragon:1557740065898102845>",
+    "Fairy":"<:TypeFairy:1557740133569134712>",
+    "Fiend":"<:TypeFiend:1557740191467180082>",
+    "Fish":"<:TypeFish:1557740264389484616>",
+    "Illusion":"<:TypeIllusion:1557740336690757694>",
+    "Insect":"<:TypeInsect:1557740422665732139>",
+    "Machine":"<:TypeMachine:1557740632234131486>",
+    "Plant":"<:TypePlant:1557740712903188652>",
+    "Psychic":"<:TypePsychic:1557740781454893078>",
+    "Pyro":"<:TypePyro:1557740852833550397>",
+    "Reptile":"<:TypeReptile:1557740903840612362>",
+    "Rock":"<:TypeRock:1557740511278923916>",
+    "Sea Serpent":"<:TypeSeaSerpent:1557740966520033293>",
+    "Spellcaster":"<:TypeSpellcaster:1557741025752121344>",
+    "Thunder":"<:TypeThunder:1557741068156407808>",
+    "Warrior":"<:TypeWarrior:1557741121457750166>",
+    "Winged Beast":"<:TypeWingedBeast:1557741181058818203>",
+    "Wyrm":"<:TypeWyrm:1557741237635780749>",
+    "Zombie":"<:TypeZombie:1557741270087245934>"
 }
 
 colours={
@@ -94,8 +67,6 @@ colours={
     "synchro":"eeeeee",
     "xyz":"030201"
 }
-
-kuchenLogo="https://cdn.discordapp.com/attachments/1020726199904895017/1030482117202821232/unkown4.png"
 
 async def cardnamegen(name):
     con = sqlite3.connect("cards.cdb")
@@ -370,47 +341,6 @@ async def cardembedgen(name):
     con.close()
     return emb, emb2
 
-async def DownloadandProcessReplay():
-    urllib.request.urlretrieve("https://docs.google.com/spreadsheets/d/13Wd7MI58RhdhWqjCaWeZ_IBZm_1cEwr_O6z87j1i0M8/export?format=tsv", "ReplayData.tsv")
-    #Timestamp, tier, winner, loser, wscore, lscore, replay, winner decklist, loser decklist, warch, larch, tourney
-    with open("data.json", "r", encoding="utf-8") as g:
-        data=json.load(g)
-    with open("ReplayData.tsv", "r", encoding="utf-8") as g:
-        CharSt=""
-        ListSt=[]
-        ListPos=0
-        FirstLine=True
-        for i in g.read():
-            if i not in ["\t", "\n"]:
-                CharSt=str(CharSt+i)
-            else:
-                if ListPos <12:
-                    ListSt.append(CharSt)
-                    if ListPos==11:
-                        if FirstLine!=True:
-                            if ListSt[0] not in data:
-                                data[ListSt[0]]={
-                                    "layer":ListSt[1].lower(),
-                                    "winner":ListSt[2].lower(),
-                                    "loser":ListSt[3].lower(),
-                                    "score":f"{ListSt[4]}-{ListSt[5]}",
-                                    "replays":list(ListSt[6].split(", ")),
-                                    "warch":[ListSt[9].lower()],
-                                    "wlink":ListSt[7],
-                                    "larch":[ListSt[10].lower()],
-                                    "llink":ListSt[8],
-                                    "tournament":ListSt[11]
-                                }
-                        else:
-                            FirstLine=False
-                        ListSt=[]
-                if i=="\n":
-                    ListPos=-1
-                ListPos+=1
-                CharSt=""
-    with open("data.json", "w", encoding="utf-8") as g:
-        json.dump(data, g)
-
 async def CardDatabaseStrip():
     ref=["Monster", "Spell", "Trap", "Blank", "Normal", "Effect", "Fusion", "Ritual", "Trap Monster", "Spirit", "Union", "Gemini", "Tuner", "Synchro", "Token", "Maxumum", "Quick-Play", "Continuous", "Equip", "Field", "Counter", "Flip", "Toon", "Xyz", "Pendulum", "spsummon", "Link"]
     #print("penis")
@@ -505,303 +435,6 @@ async def self(interaction:discord.Interaction):
     else:
         await interaction.response.send_message("Updating.", ephemeral=True)
         await downloadcdb()
-
-# @tree.command(name="layer-stats", description="Sends stats for specified layer")
-# async def self(interaction:discord.Interaction, layer:str, emphemral:bool=False):
-#     global LastCheck
-#     global layers
-#     global kuchenLogo
-#     if time.time()-LastCheck>=3600:
-#         await DownloadandProcessReplay()
-#         LastCheck=time.time()
-#     if layer.lower() not in layers:
-#         await interaction.response.send_message(f"{layer} is not a valid layer", ephemeral=True)
-#     else:
-#         await interaction.response.defer(ephemeral=emphemral)
-#         if layer.lower() in ["l4", "layer 4", "layer 4 (lemon)", "lemon", "4"]:
-#             layer="layer 4 (lemon)"
-#         elif layer.lower() in ["l3", "layer 3", "layer 3 (cheesecake)", "cheesecake", "3"]:
-#             layer="layer 3 (cheesecake)"
-#         elif layer.lower() in ["l2", "layer 2", "layer 2 (chocolate)", "chocolate", "2"]:
-#             layer="layer 2 (chocolate)"
-#         elif layer.lower() in ["l1", "layer 1", "layer 1 (vanilla)", "vanilla", "1"]:
-#             layer="layer 1 (vanilla)"
-#         else:
-#             layer="frosting"
-#         with open ("data.json","r", encoding="utf-8")as g:
-#             data=json.load(g)
-#             layerdata={}
-#             for i in data:
-#                 if data[i]["layer"]==layer:
-#                     layerdata[i]=data[i]
-#             tournaments=[]
-#             players={}
-#             archetypes={}
-#             for i in layerdata:
-#                 if layerdata[i]["tournament"] not in tournaments:
-#                     if layerdata[i]["tournament"] != "N/A":
-#                         tournaments.append(layerdata[i]["tournament"])
-#                 if layerdata[i]["winner"] not in players:
-#                     players[layerdata[i]["winner"]]=0
-#                 players[layerdata[i]["winner"]]+=1
-#                 if layerdata[i]["loser"] not in players:
-#                     players[layerdata[i]["loser"]]=0
-#                 players[layerdata[i]["loser"]]+=1
-#                 for k in layerdata[i]["warch"]:
-#                     if k not in archetypes:
-#                         archetypes[k]=0
-#                     archetypes[k]+=1
-#                 for k in layerdata[i]["larch"]:
-#                     if k not in archetypes:
-#                         archetypes[k]=0
-#                     archetypes[k]+=1
-#             emb=discord.Embed(title=layer.title(), description=f"**Number of Games** - {len(layerdata)}\n**Number of Players** - {len(players)}")
-#             emb.set_thumbnail(url=kuchenLogo)
-#             players=dict(sorted(players.items(), key=lambda x:x[1], reverse=True))
-#             archetypes=dict(sorted(archetypes.items(), key=lambda x:x[1], reverse=True))
-#             playerlist=""
-#             count=1
-#             for i in players:
-#                 if count<=5:
-#                     if count ==1:
-#                         playerlist=f"{count}. **{i}** - {players[i]}"
-#                     else:
-#                         playerlist=f"{playerlist}\n{count}. **{i}** - {players[i]}"
-#                 count+=1
-#             while count <=5:
-#                 playerlist=f"{playerlist}\n{count}. N/A"
-#                 count+=1
-#             archlist=""
-#             count=1
-#             for i in archetypes:
-#                 if count<=5:
-#                     if count ==1:
-#                         archlist=f"{count}. **{i}** - {archetypes[i]}"
-#                     else:
-#                         archlist=f"{archlist}\n{count}. **{i}** - {archetypes[i]}"
-#                 count+=1
-#             while count <=5:
-#                 archlist=f"{archlist}\n{count}. N/A"
-#                 count+=1
-#             emb.add_field(name="Top Players", value=playerlist, inline=True)
-#             emb.add_field(name="Top Archetypes", value=archlist, inline=True)
-#             tournamentstr=""
-#             if len(tournaments)==0:
-#                 tournamentstr="N/A"
-#             else:
-#                 for i in tournaments:
-#                     if tournamentstr=="":
-#                         tournamentstr=i
-#                     else:
-#                         tournamentstr=f"{tournamentstr}\n{i}"
-#             emb.add_field(name="Tournaments", value=tournamentstr, inline=False)
-#         await interaction.followup.send(embed=emb, ephemeral=emphemral)
-
-# @tree.command(name="kuchen-stats",description="Server Wide Stats")
-# async def self(interaction:discord.Interaction, emphemral:bool=False):
-#     global LastCheck
-#     global kuchenLogo
-#     if time.time()-LastCheck>=1800:
-#         await DownloadandProcessReplay()
-#         LastCheck=time.time()
-#     await interaction.response.defer(ephemeral=emphemral)
-#     with open("data.json", "r", encoding="utf-8")as g:
-#         data=json.load(g)
-#         layer={}
-#         player={}
-#         archetypes={}
-#         tournament=[]
-#         for i in data:
-#             if data[i]["layer"] not in layer:
-#                 layer[data[i]["layer"]]=0
-#             layer[data[i]["layer"]]+=1
-#             if data[i]["winner"]not in player:
-#                 player[data[i]["winner"]]=0
-#             player[data[i]["winner"]]+=1
-#             if data[i]["loser"]not in player:
-#                 player[data[i]["loser"]]=0
-#             player[data[i]["loser"]]+=1
-#             for k in data[i]["warch"]:
-#                 if k not in archetypes:
-#                     archetypes[k]=0
-#                 archetypes[k]+=1
-#             for k in data[i]["larch"]:
-#                 if k not in archetypes:
-#                     archetypes[k]=0
-#                 archetypes[k]+=1
-#             if data[i]["tournament"]!="N/A":
-#                 if data[i]["tournament"]not in tournament:
-#                     tournament.append(data[i]["tournament"])
-#         player=dict(sorted(player.items(), key=lambda x:x[1], reverse=True))
-#         layer=dict(sorted(layer.items(), key=lambda x:x[1], reverse=True))
-#         archetypes=dict(sorted(archetypes.items(), key=lambda x:x[1], reverse=True))
-#         count=1
-#         for i in layer:
-#             if count==1:  
-#                 emb=discord.Embed(title="Kuchen Stats", description=f"**Number of Games** - {len(data)}\n**Number of Players** - {len(player)}\n**Most Player Layer** - {i}")
-#             count+=1
-#         emb.set_thumbnail(url=kuchenLogo)
-#         count=1
-#         playerstr=""
-#         for i in player:
-#             if count<=5:
-#                 if count==1:
-#                     playerstr=f"{count}. **{i}** - {player[i]}"
-#                 else:
-#                     playerstr=f"{playerstr}\n{count}. **{i}** - {player[i]}"
-#             count+=1
-#         while count<=5:
-#             playerstr=f"{playerstr}\n{count}. N/A"
-#             count+=1
-#         count=1
-#         archstr=""
-#         for i in archetypes:
-#             if count<=5:
-#                 if count==1:
-#                     archstr=f"{count}. **{i}** - {archetypes[i]}"
-#                 else:
-#                     archstr=f"{archstr}\n{count}. **{i}** - {archetypes[i]}"
-#             count+=1
-#         while count<=5:
-#             archstr=f"{archstr}\n{count}. N/A"
-#             count+=1
-#         tournamentstr=""
-#         if len(tournament)==0:
-#             tournamentstr="N/A"
-#         else:
-#             for i in tournament:
-#                 if tournamentstr=="":
-#                     tournamentstr=i
-#                 else:
-#                     tournamentstr=f"{tournamentstr}\n{i}"
-#         emb.add_field(name="Top Players", value=playerstr, inline=True)
-#         emb.add_field(name="Top Archetypes", value=archstr, inline=True)
-#         #emb.add_field(name="Tournaments", value=tournamentstr, inline=False)
-#     await interaction.followup.send(embed=emb, ephemeral=emphemral)
-
-# @tree.command(name="player-stats", description="Sends stats for specified player")
-# async def self(interaction:discord.Interaction, player:str, emphemral:bool=False):
-#     global LastCheck
-#     global kuchenLogo
-#     player=player.lower()
-#     if time.time()-LastCheck>=1800:
-#         await DownloadandProcessReplay()
-#         LastCheck=time.time()
-#     await interaction.response.defer(ephemeral=emphemral)
-#     with open ("data.json","r", encoding="utf-8")as g:
-#         data=json.load(g)
-#     playerdata={}
-#     for i in data:
-#         if data[i]["winner"]==player:
-#             playerdata[i]=data[i]
-#         elif data[i]["loser"]==player:
-#             playerdata[i]=data[i]
-#     if len(playerdata)==0:
-#         await interaction.followup.send(f"{player} is not a valid player", ephemeral=True)
-#     else:
-#         archetypes={}
-#         tournaments=[]
-#         layer={}
-#         wdl={"win":0, "draw":0, "loss":0}
-#         for i in playerdata:
-#             if playerdata[i]["winner"]==player:
-#                 for k in playerdata[i]["warch"]:
-#                     if k not in archetypes:
-#                         archetypes[k]=0
-#                     archetypes[k]+=1
-#                 score=list(playerdata[i]["score"].split("-"))
-#                 if int(score[0])>int(score[1]):
-#                     wdl["win"]+=1
-#                 elif int(score[0])==int(score[1]):
-#                     wdl["draw"]+=1
-#                 elif int(score[0])<int(score[1]):
-#                     wdl["loss"]+=1
-#             elif playerdata[i]["loser"]==player:
-#                 for k in playerdata[i]["larch"]:
-#                     if k not in archetypes:
-#                         archetypes[k]=0
-#                     archetypes[k]+=1
-#                 score=list(playerdata[i]["score"].split("-"))
-#                 if int(score[0])>int(score[1]):
-#                     wdl["loss"]+=1
-#                 elif int(score[0])==int(score[1]):
-#                     wdl["draw"]+=1
-#                 elif int(score[0])<int(score[1]):
-#                     wdl["win"]+=1
-#             if playerdata[i]["tournament"] not in tournaments:
-#                 if playerdata[i]["tournament"]!="N/A":
-#                     tournaments.append(playerdata[i]["tournament"])
-#             if playerdata[i]["layer"]not in layer:
-#                 layer[playerdata[i]["layer"]]=0
-#             layer[playerdata[i]["layer"]]+=1
-#         layer=dict(sorted(layer.items(), key=lambda x:x[1], reverse=True))
-#         archetypes=dict(sorted(archetypes.items(), key=lambda x:x[1], reverse=True))
-#         emb=discord.Embed(title=player.title(), description=f"**Number of Games** - {len(playerdata)}\n**Win**-**Draw**-**Loss** - **{wdl['win']}**-**{wdl['draw']}**-**{wdl['loss']}**")
-#         emb.set_thumbnail(url=kuchenLogo)
-#         count=1
-#         layerstr=""
-#         for i in layer:
-#             if count<=5:
-#                 if count==1:
-#                     layerstr=f"{count}. **{i}** - {layer[i]}"
-#                 else:
-#                     layerstr=f"{layerstr}\n{count}. **{i}** - {layer[i]}"
-#             count+=1
-#         while count<=5:
-#             layerstr=f"{layerstr}\n{count}. N/A"
-#             count+=1
-#         count=1
-#         archstr=""
-#         for i in archetypes:
-#             if count<=5:
-#                 if count==1:
-#                     archstr=f"{count}. **{i}** - {archetypes[i]}"
-#                 else:
-#                     archstr=f"{archstr}\n{count}. **{i}** - {archetypes[i]}"
-#             count+=1
-#         while count <=5:
-#             archstr=f"{archstr}\n{count}. N/A"
-#             count+=1
-#         tournamentstr=""
-#         if len(tournaments)==0:
-#             tournamentstr="N/A"
-#         else:
-#             for i in tournaments:
-#                 if tournamentstr=="":
-#                     tournamentstr=i
-#                 else:
-#                     tournamentstr=f"{tournamentstr}\n{i}"
-#         emb.add_field(name="Top Layers", value=layerstr, inline=True)
-#         emb.add_field(name="Top Archetypes", value=archstr, inline=True)
-#         emb.add_field(name="Tournaments", value=tournamentstr, inline=False)
-#         await interaction.followup.send(embed=emb, ephemeral=emphemral)
-
-# @tree.command(name="archetype-stats", description="Sends stats for specified archetype")
-# async def self(interaction:discord.Interaction, archetype:str, emphemral:bool=False):
-#     global LastCheck
-#     global kuchenLogo
-#     archetype=archetype.lower()
-#     if time.time()-LastCheck>=1800:
-#         await DownloadandProcessReplay()
-#         LastCheck=time.time()
-#     await interaction.response.defer(ephemeral=emphemral)
-#     with open ("data.json","r", encoding="utf-8")as g:
-#         data=json.load(g)
-#     archdata={}
-#     for i in data:
-#         if i not in archdata:
-#             if archetype in data[i]["warch"]:
-#                 archdata[i]=data[i]
-#             elif archetype in data[i]["larch"]:
-#                 archdata[i]=data[i]
-#     if len(archdata)==0:
-#         await interaction.followup.send(f"{archetype} is not a valid archetype", ephemeral=True)
-#     else:
-#         players={}
-#         tournaments=[]
-#         layers={}
-#         playedwith={}
-#         wdl={"win":0,"draw":0,"loss":0}
 
 @tree.command(name="card-art", description="returns card art.")
 async def self(interaction:discord.Interaction, card:str, emphemral:bool=False):
